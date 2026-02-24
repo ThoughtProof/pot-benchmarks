@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "run": "node run.js",
+    "run:auto-evolve": "node run.js --auto-evolve",
     "run:quick": "node run.js --category verified-true --category hallucination",
     "run:claim-injection": "node run.js --category claim-injection",
     "evolve": "node evolve.js",

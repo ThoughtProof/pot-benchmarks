@@ -22,6 +22,7 @@ const { cases } = JSON.parse(readFileSync(benchmarkPath, 'utf8'));
 const args = process.argv.slice(2);
 const filterCategories = [];
 const filterIds = [];
+const autoEvolve = args.includes('--auto-evolve'); // opt-in: triggers evolve.js after run
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--category' && args[i+1]) filterCategories.push(args[++i]);
   if (args[i] === '--id' && args[i+1]) filterIds.push(args[++i]);
@@ -140,3 +141,18 @@ writeFileSync(outputPath, JSON.stringify({
   cases: results,
 }, null, 2));
 console.log(`\n💾 Results saved to results/${timestamp}.json`);
+
+// --auto-evolve: trigger self-evolving engine after run (opt-in)
+if (autoEvolve) {
+  console.log('\n🧬 --auto-evolve: triggering Self-Evolving Benchmark Engine...');
+  const { execSync } = await import('child_process');
+  try {
+    execSync('node evolve.js --count 3', {
+      cwd: __dir,
+      stdio: 'inherit',
+      env: process.env,
+    });
+  } catch (e) {
+    console.warn('⚠️  Auto-evolve failed (non-fatal):', e.message);
+  }
+}
