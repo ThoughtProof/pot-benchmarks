@@ -1,13 +1,14 @@
 {
   "name": "pot-benchmarks-runner",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "CLI runner for pot-benchmarks",
   "type": "module",
   "scripts": {
     "run": "node run.js",
-    "run:quick": "node run.js --category verified-true --category hallucination"
+    "run:quick": "node run.js --category verified-true --category hallucination",
+    "run:claim-injection": "node run.js --category claim-injection"
   },
   "dependencies": {
-    "pot-sdk": "^0.1.0"
+    "pot-sdk": "^0.1.3"
   }
 }

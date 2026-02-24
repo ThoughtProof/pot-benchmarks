@@ -4,7 +4,7 @@ Public adversarial benchmark dataset for AI output verification. Test whether yo
 
 ## Dataset
 
-**25 test cases** across 5 categories:
+**v2.0.0 — 33 test cases** across 6 categories:
 
 | Category | Cases | Description |
 |----------|-------|-------------|
@@ -13,6 +13,20 @@ Public adversarial benchmark dataset for AI output verification. Test whether yo
 | `synthesis-bias` | 5 | Outputs likely to cause synthesizer dominance |
 | `edge-case` | 4 | Partial truths, reclassified facts, domain ambiguity |
 | `verified-true` | 4 | Correct outputs — tests for false positives |
+| `claim-injection` | 8 | **New:** Known-false claims with tracked propagation risk |
+
+### Claim-Injection Category (v2.0.0)
+The `claim-injection` category answers the question: *"How do you establish ground truth for hallucination detection?"*
+
+Each case contains:
+- A **plausible text** with a specific known-false claim injected
+- `injectedFalseClaim` — the exact false statement
+- `correctFact` — the verified truth
+- `propagation_risk` — how likely the false claim is to survive into synthesis (`low`/`medium`/`high`/`critical`)
+
+This category measures not just **detection** (does the Critic flag it?) but also **propagation** (does the false claim survive into the Synthesis?). A low DPR on claim-injection cases indicates the synthesizer is not preserving critic objections — false consensus.
+
+Cases range from easy (Python release date, Apple founding year) to hard (Einstein Nobel Prize reason, Everest border nuance).
 
 ## Run with pot-sdk
 

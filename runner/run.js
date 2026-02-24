@@ -67,12 +67,28 @@ for (const testCase of toRun) {
     // Check expected flags
     const missingFlags = (testCase.expectedFlags || []).filter(f => !(result.flags || []).includes(f));
 
+    // Claim-injection: track propagation (did false claim survive into synthesis?)
+    let claim_propagated = null;
+    let dpr_score = null;
+    if (testCase.category === 'claim-injection' && testCase.injectedFalseClaim && result.synthesis) {
+      const synthLower = result.synthesis.toLowerCase();
+      const claimTerms = testCase.injectedFalseClaim.toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+        .filter(w => w.length > 3);
+      const hits = claimTerms.filter(t => synthLower.includes(t)).length;
+      claim_propagated = hits >= 2; // false claim survived into synthesis
+      dpr_score = result.dpr?.score ?? null;
+    }
+
     const status = correct ? '✅' : '❌';
-    console.log(`${status} confidence=${result.confidence?.toFixed(2)} flags=[${(result.flags||[]).join(',')}]`);
+    const propagationNote = claim_propagated === true ? ' 🚨 claim propagated'
+      : claim_propagated === false ? ' 🛡️ claim blocked' : '';
+    console.log(`${status} confidence=${result.confidence?.toFixed(2)} flags=[${(result.flags||[]).join(',')}]${propagationNote}`);
+    if (dpr_score !== null) console.log(`     📊 DPR: ${dpr_score.toFixed(3)} | false_consensus: ${result.dpr?.false_consensus}`);
     if (missingFlags.length) console.log(`     ⚠️  Missing expected flags: ${missingFlags.join(', ')}`);
 
     correct ? passed++ : failed++;
-    results.push({ id: testCase.id, category: testCase.category, correct, result, missingFlags });
+    results.push({ id: testCase.id, category: testCase.category, correct, result, missingFlags, claim_propagated, dpr_score });
   } catch (err) {
     console.log(`💥 ERROR: ${err.message}`);
     errors++;
@@ -98,6 +114,19 @@ console.log('\nBy category:');
 for (const [cat, stats] of Object.entries(byCategory)) {
   const pct = ((stats.passed / stats.total) * 100).toFixed(0);
   console.log(`  ${cat.padEnd(20)} ${stats.passed}/${stats.total} (${pct}%)`);
+}
+
+// Claim-injection propagation summary
+const ciResults = results.filter(r => r.category === 'claim-injection' && r.claim_propagated !== null);
+if (ciResults.length > 0) {
+  const propagated = ciResults.filter(r => r.claim_propagated).length;
+  const blocked = ciResults.filter(r => !r.claim_propagated).length;
+  const avgDpr = ciResults.filter(r => r.dpr_score !== null).reduce((s, r) => s + r.dpr_score, 0) / ciResults.length;
+  console.log('\n🧪 Claim-Injection Propagation Analysis:');
+  console.log(`  🛡️  Blocked (claim didn't reach synthesis): ${blocked}/${ciResults.length}`);
+  console.log(`  🚨 Propagated (false claim survived):       ${propagated}/${ciResults.length}`);
+  console.log(`  📊 Avg DPR across claim-injection cases:   ${avgDpr.toFixed(3)}`);
+  console.log(`  → Detection rate: ${((blocked / ciResults.length) * 100).toFixed(1)}%`);
 }
 
 // Save results
